@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import { User } from "../models/user";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { AuthenticatedRequest } from "../middlewares/auth-check";
 
 export const signup = async (
   req: Request,
@@ -14,19 +15,12 @@ export const signup = async (
   try {
     existingUser = await User.findOne({ email: email });
   } catch (err) {
-    // const error = new HttpError(
-    //   'Signing up failed, please try again later.',
-    //   500
-    // );
-    // return next(error);
+    return res
+      .status(401)
+      .json({ message: "Can't signup at the moment please try again later." });
   }
 
   if (existingUser) {
-    // const error = new HttpError(
-    //   'User exists already, please login instead.',
-    //   422
-    // );
-    // return next(error);
     return res
       .status(401)
       .json({ message: "Unauthorized. user allready exists." });
@@ -35,13 +29,7 @@ export const signup = async (
   let hashedPassword;
   try {
     hashedPassword = await bcrypt.hash(password, 12);
-  } catch (err) {
-    // const error = new HttpError(
-    //   'Could not create user, please try again.',
-    //   500
-    // );
-    // return next(error);
-  }
+  } catch (err) {}
 
   const createdUser = await User.create({
     name,
@@ -56,9 +44,8 @@ export const signup = async (
       expiresIn: "1h",
     });
   } catch (error) {}
-  const loggedUser = { ...createdUser.toJSON(), password: undefined };
 
-  res.status(201).json({ user: loggedUser, token: token });
+  res.status(201).json(token);
 };
 
 export const login = async (
@@ -72,19 +59,9 @@ export const login = async (
 
   try {
     existingUser = await User.findOne({ email: email });
-  } catch (err) {
-    //   const error = new HttpError(
-    //     'Loggin in failed, please try again later.',
-    //     500
-    //   );
-    //   return next(error);
-  }
+  } catch (err) {}
 
   if (!existingUser) {
-    //   const error = new HttpError(
-    //     'Invalid credentials, could not log you in.',
-    //     401
-    //   );
     return res.status(401).json({ message: "Unauthorized. Invalid token." });
   }
 
@@ -98,15 +75,31 @@ export const login = async (
 
   let token;
   try {
-    token = jwt.sign(
-      { userId: existingUser.id, isAdmin: false },
-      "supersecret_dont_share",
-      { expiresIn: "1h" }
-    );
+    token = jwt.sign({ userId: existingUser.id }, "supersecret_dont_share", {
+      expiresIn: "1h",
+    });
   } catch (error) {}
 
-  res.json({
-    user: existingUser.toObject({ getters: true }),
-    token: token,
-  });
+  res.json(token);
+};
+
+export const autoLogin = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const user = await User.findById({ id: req.userId });
+    if (!user) {
+      return res.status(401).json({ message: "Unauthorized. Invalid token." });
+    }
+  } catch (err) {}
+  let token;
+  try {
+    token = jwt.sign({ userId: req.userId }, "supersecret_dont_share", {
+      expiresIn: "1h",
+    });
+  } catch (error) {}
+
+  res.json(token);
 };
