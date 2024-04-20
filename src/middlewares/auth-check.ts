@@ -11,7 +11,7 @@ export const isLogedin = (
   next: NextFunction
 ) => {
   try {
-    console.log(req.headers.authorization?.split(" ")[1]);
+    console.log("check", req.headers.authorization?.split(" ")[1]);
     if (req.method === "OPTIONS") {
       return next();
     }
@@ -26,6 +26,6 @@ export const isLogedin = (
     req.userId = decodedToken.userId;
     next();
   } catch (error) {
-    return res.status(401).json({ message: "Unauthorized. Invalid token." });
+    return res.status(401).json({ message: "Unauthorized. Invalid token...." });
   }
 };

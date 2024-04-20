@@ -90,19 +90,12 @@ export const autoLogin = async (
 ) => {
   let user;
   try {
-    user = await User.findById({ id: req.userId });
+    user = await User.findById(req.userId);
   } catch (err) {}
 
   if (!user) {
     return res.status(401).json({ message: "Unauthorized. Invalid token." });
   }
-
-  let token;
-  try {
-    token = jwt.sign({ userId: req.userId }, "supersecret_dont_share", {
-      expiresIn: "1h",
-    });
-  } catch (error) {}
   const loggedUser = { ...user.toJSON(), password: undefined };
-  res.status(201).json({ user: loggedUser, token: token });
+  res.status(201).json(loggedUser);
 };
