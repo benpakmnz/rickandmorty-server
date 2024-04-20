@@ -11,41 +11,34 @@ export const signup = async (
 ) => {
   const { email, name, password } = req.body;
 
-  let existingUser;
   try {
-    existingUser = await User.findOne({ email: email });
-  } catch (err) {
-    return res
-      .status(401)
-      .json({ message: "Can't signup at the moment please try again later." });
-  }
+    let existingUser = await User.findOne({ email: email });
+    if (existingUser) {
+      return res.status(409).json({ message: "User already exists." });
+    }
 
-  if (existingUser) {
-    return res
-      .status(401)
-      .json({ message: "Unauthorized. user allready exists." });
-  }
+    const hashedPassword = await bcrypt.hash(password, 12);
 
-  let hashedPassword;
-  try {
-    hashedPassword = await bcrypt.hash(password, 12);
-  } catch (err) {}
-
-  const createdUser = await User.create({
-    name,
-    email,
-    password: hashedPassword,
-    isAdmin: false,
-  });
-
-  let token;
-  try {
-    token = jwt.sign({ userId: createdUser.id }, "supersecret_dont_share", {
-      expiresIn: "1h",
+    const createdUser = await User.create({
+      name,
+      email,
+      password: hashedPassword,
+      isAdmin: false,
     });
-  } catch (error) {}
-  const loggedUser = { ...createdUser.toJSON(), password: undefined };
-  res.status(201).json({ user: loggedUser, token: token });
+
+    const token = jwt.sign(
+      { userId: createdUser.id },
+      "supersecret_dont_share",
+      {
+        expiresIn: "1h",
+      }
+    );
+    const loggedUser = { ...createdUser.toJSON(), password: undefined };
+    res.status(201).json({ user: loggedUser, token: token });
+  } catch (error) {
+    console.error("Error during signup:", error);
+    res.status(500).json({ message: "Could not create user." });
+  }
 };
 
 export const login = async (
@@ -55,32 +48,33 @@ export const login = async (
 ) => {
   const { email, password } = req?.body;
 
-  let existingUser;
-
   try {
-    existingUser = await User.findOne({ email: email });
-  } catch (err) {}
+    let existingUser = await User.findOne({ email: email });
+    if (!existingUser) {
+      return res.status(401).json({ message: "Invalid credentials." });
+    }
 
-  if (!existingUser) {
-    return res.status(401).json({ message: "Unauthorized. Invalid token." });
+    const isValidPassword = await bcrypt.compare(
+      password,
+      existingUser.password
+    );
+    if (!isValidPassword) {
+      return res.status(401).json({ message: "Invalid credentials." });
+    }
+
+    const token = jwt.sign(
+      { userId: existingUser.id },
+      "supersecret_dont_share",
+      {
+        expiresIn: "1h",
+      }
+    );
+    const loggedUser = { ...existingUser.toJSON(), password: undefined };
+    res.status(200).json({ user: loggedUser, token: token });
+  } catch (error) {
+    console.error("Error during login:", error);
+    res.status(500).json({ message: "Login failed." });
   }
-
-  let isValidPassword = false;
-  try {
-    isValidPassword = await bcrypt.compare(password, existingUser.password);
-  } catch (error) {}
-
-  if (!isValidPassword) {
-  }
-
-  let token;
-  try {
-    token = jwt.sign({ userId: existingUser.id }, "supersecret_dont_share", {
-      expiresIn: "1h",
-    });
-  } catch (error) {}
-  const loggedUser = { ...existingUser.toJSON(), password: undefined };
-  res.status(201).json({ user: loggedUser, token: token });
 };
 
 export const autoLogin = async (
@@ -88,14 +82,15 @@ export const autoLogin = async (
   res: Response,
   next: NextFunction
 ) => {
-  let user;
   try {
-    user = await User.findById(req.userId);
-  } catch (err) {}
-
-  if (!user) {
-    return res.status(401).json({ message: "Unauthorized. Invalid token." });
+    let user = await User.findById(req.userId);
+    if (!user) {
+      return res.status(401).json({ message: "Unauthorized. Invalid token." });
+    }
+    const loggedUser = { ...user.toJSON(), password: undefined };
+    res.status(200).json(loggedUser);
+  } catch (error) {
+    console.error("Error during auto login:", error);
+    res.status(500).json({ message: "Auto login failed." });
   }
-  const loggedUser = { ...user.toJSON(), password: undefined };
-  res.status(201).json(loggedUser);
 };
