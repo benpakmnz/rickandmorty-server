@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { LocationReqModel } from "../models/location-requests";
+import { LocationModel } from "../models/location";
 
 export const getAllLocationRequests = async (
   req: Request,
@@ -29,6 +30,28 @@ export const postLocationRequest = async (
     res
       .status(500)
       .json({ message: "Failed adding request", error: error.message });
+  }
+};
+
+export const addLocation = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const existingLocation = await LocationModel.findOne({ id: req.body.id });
+    if (existingLocation) {
+      return res.status(400).json({ message: "Location ID already exists" });
+    }
+    console.log(req.body);
+    const location = await LocationModel.create(req.body);
+
+    return res.status(201).send(location);
+  } catch (error: any) {
+    console.log(error);
+    res
+      .status(500)
+      .json({ message: "Failed add location", error: error.message });
   }
 };
 

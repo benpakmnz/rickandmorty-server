@@ -99,27 +99,6 @@ export const getLocationsByName = async (
   }
 };
 
-export const addLocation = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const existingLocation = await LocationModel.findOne({ id: req.body.id });
-    if (existingLocation) {
-      return res.status(400).json({ message: "Location ID already exists" });
-    }
-
-    const location = await LocationModel.create(req.body);
-    return res.status(201).send(location);
-  } catch (error: any) {
-    console.log(error);
-    res
-      .status(500)
-      .json({ message: "Failed add location", error: error.message });
-  }
-};
-
 export const getResidents = async (
   req: Request,
   res: Response,
@@ -127,11 +106,12 @@ export const getResidents = async (
 ) => {
   try {
     const residentsList: string[] = req.body.residentsIds;
+    if (residentsList.length <= 0) return res.status(201).send([]);
     const externalApiResponse = await axios.get(
       `https://rickandmortyapi.com/api/character/${residentsList}`
     );
     const data =
-      residentsList.length == 1
+      residentsList.length === 1
         ? [externalApiResponse.data]
         : externalApiResponse.data;
     res.status(201).send(data);
