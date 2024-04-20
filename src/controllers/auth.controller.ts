@@ -44,8 +44,8 @@ export const signup = async (
       expiresIn: "1h",
     });
   } catch (error) {}
-
-  res.status(201).json(token);
+  const loggedUser = { ...createdUser.toJSON(), password: undefined };
+  res.status(201).json({ user: loggedUser, token: token });
 };
 
 export const login = async (
@@ -79,8 +79,8 @@ export const login = async (
       expiresIn: "1h",
     });
   } catch (error) {}
-
-  res.json(token);
+  const loggedUser = { ...existingUser.toJSON(), password: undefined };
+  res.status(201).json({ user: loggedUser, token: token });
 };
 
 export const autoLogin = async (
@@ -88,18 +88,21 @@ export const autoLogin = async (
   res: Response,
   next: NextFunction
 ) => {
+  let user;
   try {
-    const user = await User.findById({ id: req.userId });
-    if (!user) {
-      return res.status(401).json({ message: "Unauthorized. Invalid token." });
-    }
+    user = await User.findById({ id: req.userId });
   } catch (err) {}
+
+  if (!user) {
+    return res.status(401).json({ message: "Unauthorized. Invalid token." });
+  }
+
   let token;
   try {
     token = jwt.sign({ userId: req.userId }, "supersecret_dont_share", {
       expiresIn: "1h",
     });
   } catch (error) {}
-
-  res.json(token);
+  const loggedUser = { ...user.toJSON(), password: undefined };
+  res.status(201).json({ user: loggedUser, token: token });
 };
