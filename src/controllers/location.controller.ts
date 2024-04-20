@@ -25,26 +25,29 @@ export const getLocationById = async (
     const id = req.params.id;
     let location = await LocationModel.findOne({ id: id });
     if (location === null) {
-      try {
-        const response = await axios.get(
-          `https://rickandmortyapi.com/api/location/${id}`
-        );
-        const externalLocation = response.data;
-        const residents = handleCharactersPath(externalLocation.residents);
+      const isAdmin = await getIsAdmin(req);
+      if (isAdmin) {
+        try {
+          const response = await axios.get(
+            `https://rickandmortyapi.com/api/location/${id}`
+          );
+          const externalLocation = response.data;
+          const residents = handleCharactersPath(externalLocation.residents);
 
-        const fetchedLocation = {
-          id: externalLocation.id,
-          name: externalLocation.name,
-          dimension: externalLocation.dimension,
-          type: externalLocation.type,
-          residents: residents,
-          isExternal: true,
-        };
+          const fetchedLocation = {
+            id: externalLocation.id,
+            name: externalLocation.name,
+            dimension: externalLocation.dimension,
+            type: externalLocation.type,
+            residents: residents,
+            isExternal: true,
+          };
 
-        return res.status(200).json(fetchedLocation);
-      } catch (error) {
-        console.log("Error fetching from external API:", error);
-        return res.status(404).json({ message: "Location not found" });
+          return res.status(200).json(fetchedLocation);
+        } catch (error) {
+          console.log("Error fetching from external API:", error);
+          return res.status(404).json({ message: "Location not found" });
+        }
       }
     }
 
@@ -62,7 +65,6 @@ export const getLocationsByName = async (
   try {
     const nameParam = req.params.name;
     const isAdmin = await getIsAdmin(req);
-    console.log("loaction", isAdmin);
     let locations = await LocationModel.find({
       name: { $regex: nameParam, $options: "i" },
     });
