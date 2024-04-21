@@ -11,7 +11,6 @@ export const isLogedin = (
   next: NextFunction
 ) => {
   try {
-    console.log("check", req.headers.authorization?.split(" ")[1]);
     if (req.method === "OPTIONS") {
       return next();
     }
