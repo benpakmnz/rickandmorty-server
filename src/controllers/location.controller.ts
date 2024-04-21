@@ -45,7 +45,6 @@ export const getLocationById = async (
 
           return res.status(200).json(fetchedLocation);
         } catch (error) {
-          console.log("Error fetching from external API:", error);
           return res.status(404).json({ message: "Location not found" });
         }
       }
