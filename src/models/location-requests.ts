@@ -2,7 +2,6 @@ import mongoose, { Model, Schema, Document } from "mongoose";
 
 export interface ILocationReqAttrs {
   location: string;
-  // user: Schema.Types.ObjectId;
 }
 
 interface ILocationReqModel extends Model<ILocationReqDoc> {
@@ -11,13 +10,11 @@ interface ILocationReqModel extends Model<ILocationReqDoc> {
 
 export interface ILocationReqDoc extends Document {
   location: string;
-  // user: Schema.Types.ObjectId;
 }
 
 const locationReqSchema = new Schema(
   {
     location: { type: String, required: true },
-    // user: { type: String, ref: "User", required: true },
   },
   {
     toJSON: {
