@@ -65,34 +65,21 @@ export const getLocationsByName = async (
   try {
     const nameParam = req.params.name;
     const isAdmin = await getIsAdmin(req);
-    let locations = await LocationModel.find({
-      name: { $regex: nameParam, $options: "i" },
-    });
-
+    let locations = await getLocationsFromDB(nameParam);
     let responseData;
+
     if (isAdmin) {
-      let externalApiResponse = [];
-      try {
-        const res = await axios.get(
-          `https://rickandmortyapi.com/api/location/?name=${nameParam}`
-        );
-        externalApiResponse = res.data.results;
-      } catch (error) {}
+      const externalApiResponse = await getLocationsFromExternalAPI(nameParam);
       const combinedResults = [
         ...locations.map((location) => location.toObject()),
         ...externalApiResponse,
       ];
 
-      const resultMap = new Map();
-      combinedResults.forEach((result) => {
-        resultMap.set(result.id, result);
-      });
-
-      const uniqueResults = Array.from(resultMap.values());
-      responseData = uniqueResults;
+      responseData = removeDuplicates(combinedResults);
     } else {
       responseData = locations;
     }
+
     res.status(201).send(responseData);
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch locations", error });
@@ -125,4 +112,29 @@ const handleCharactersPath = (charectersPathString: string[]): string[] => {
     const pathArr = path.split("/");
     return pathArr[pathArr.length - 1];
   });
+};
+
+const getLocationsFromExternalAPI = async (name: string) => {
+  try {
+    const response = await axios.get(
+      `https://rickandmortyapi.com/api/location/?name=${name}`
+    );
+    return response.data.results;
+  } catch (error) {
+    return [];
+  }
+};
+
+const getLocationsFromDB = async (name: string) => {
+  return await LocationModel.find({
+    name: { $regex: name, $options: "i" },
+  });
+};
+
+const removeDuplicates = (locations: any[]) => {
+  const resultMap = new Map();
+  locations.forEach((location) => {
+    resultMap.set(location.id, location);
+  });
+  return Array.from(resultMap.values());
 };

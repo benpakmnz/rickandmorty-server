@@ -26,7 +26,6 @@ export const postLocationRequest = async (
     const locationRequest = await LocationReqModel.create(req.body);
     return res.status(201).send(locationRequest);
   } catch (error: any) {
-    console.log(error);
     res
       .status(500)
       .json({ message: "Failed adding request", error: error.message });
@@ -43,12 +42,10 @@ export const addLocation = async (
     if (existingLocation) {
       return res.status(400).json({ message: "Location ID already exists" });
     }
-    console.log(req.body);
     const location = await LocationModel.create(req.body);
 
     return res.status(201).send(location);
   } catch (error: any) {
-    console.log(error);
     res
       .status(500)
       .json({ message: "Failed add location", error: error.message });
