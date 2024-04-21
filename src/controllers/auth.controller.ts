@@ -9,7 +9,7 @@ export const signup = async (
   res: Response,
   next: NextFunction
 ) => {
-  const { email, name, password } = req.body;
+  const { email, name, password, isAdmin } = req.body;
 
   try {
     let existingUser = await User.findOne({ email: email });
@@ -23,7 +23,7 @@ export const signup = async (
       name,
       email,
       password: hashedPassword,
-      isAdmin: false,
+      isAdmin,
     });
 
     const token = jwt.sign(
