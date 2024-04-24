@@ -3,10 +3,8 @@ import mongoose, { Model, Schema, Document } from "mongoose";
 export interface UserAttrs {
   email: string;
   name: string;
-  // requests: Schema.Types.ObjectId[];
   password: string;
   isAdmin: boolean;
-  // user_pic: string;
 }
 
 interface UserModel extends Model<UserDoc> {
@@ -16,20 +14,16 @@ interface UserModel extends Model<UserDoc> {
 export interface UserDoc extends Document {
   email: string;
   name: string;
-  // requests: Schema.Types.ObjectId[];
   password: string;
   isAdmin: boolean;
-  // user_pic: string;
 }
 
 const userSchema = new Schema(
   {
     email: { type: String, required: true, unique: true },
     name: { type: String, required: true },
-    // requests: [{ type: Schema.Types.ObjectId, ref: "LocationReq" }],
     password: { type: String, required: true },
     isAdmin: { type: Boolean },
-    // user_pic: { type: String },
   },
   {
     toJSON: {
